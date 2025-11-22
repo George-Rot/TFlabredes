@@ -116,7 +116,18 @@ static int parse_ipv4(uint8_t *buffer, int packet_size, int offset,
     } else if (ip_hdr->protocol == PROTO_ICMP && next_offset + sizeof(struct icmp_header) <= packet_size) {
         struct icmp_header *icmp_hdr = (struct icmp_header *)(buffer + next_offset);
         
-        sprintf(inet_info->extra_info, "Type=%d,Code=%d", icmp_hdr->type, icmp_hdr->code);
+        // Update Internet layer info with ICMP details
+        sprintf(inet_info->extra_info, "TTL=%d,Protocol=ICMP,Type=%d,Code=%d", 
+                ip_hdr->ttl, icmp_hdr->type, icmp_hdr->code);
+        
+        // Also log as transport layer for consistency
+        get_timestamp(trans_info->timestamp, sizeof(trans_info->timestamp));
+        strcpy(trans_info->protocol, "ICMP");
+        strcpy(trans_info->src_ip, inet_info->src_ip);
+        strcpy(trans_info->dest_ip, inet_info->dest_ip);
+        trans_info->src_port = icmp_hdr->type;  // Use type as "port"
+        trans_info->dest_port = icmp_hdr->code; // Use code as "port"
+        trans_info->packet_size = inet_info->packet_size;
     }
 
     return 0;
@@ -182,22 +193,27 @@ int parse_packet(uint8_t *buffer, int packet_size,
     memset(trans_info, 0, sizeof(TransportLayerInfo));
     memset(app_info, 0, sizeof(ApplicationLayerInfo));
 
-    // For TUN interface, packets don't have Ethernet header
-    // First 4 bytes are TUN header, then IP packet starts
-    int offset = 4; // Skip TUN header
-
-    if (offset >= packet_size) {
+    // For Ethernet interface, skip Ethernet header (14 bytes)
+    // Ethernet header: 6 bytes dest MAC + 6 bytes src MAC + 2 bytes EtherType
+    int offset = 14; // Skip Ethernet header
+    
+    // Check minimum packet size
+    if (packet_size < offset + 20) { // Minimum IP header is 20 bytes
         return -1;
     }
 
-    // Check IP version
-    uint8_t version = (buffer[offset] >> 4) & 0x0F;
-
-    if (version == 4) {
+    // Check EtherType to determine IP version
+    uint16_t ether_type = (buffer[12] << 8) | buffer[13];
+    
+    // 0x0800 = IPv4, 0x86DD = IPv6
+    if (ether_type == 0x0800) {
+        // IPv4 packet
         return parse_ipv4(buffer, packet_size, offset, inet_info, trans_info, app_info);
-    } else if (version == 6) {
+    } else if (ether_type == 0x86DD) {
+        // IPv6 packet
         return parse_ipv6(buffer, packet_size, offset, inet_info, trans_info, app_info);
     }
 
+    // Not an IP packet (could be ARP, etc.)
     return -1;
 }

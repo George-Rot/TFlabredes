@@ -19,7 +19,7 @@ void init_display() {
     // Clear screen
     printf("\033[2J\033[H");
     printf("=== Monitor de Tráfego de Rede em Tempo Real ===\n");
-    printf("Interface: tun0\n");
+    printf("Interface: eth0\n");
     printf("Pressione Ctrl+C para sair\n\n");
     fflush(stdout);
 }
@@ -94,7 +94,7 @@ void update_display() {
     strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", t);
     
     printf("=== Monitor de Tráfego de Rede em Tempo Real ===\n");
-    printf("Interface: tun0 | Última atualização: %s\n", timestamp);
+    printf("Interface: eth0 | Última atualização: %s\n", timestamp);
     printf("Pressione Ctrl+C para sair\n");
     
     // Display protocol counters

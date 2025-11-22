@@ -10,7 +10,7 @@
 #include "display.h"
 
 #define BUFFER_SIZE 65536
-#define DEFAULT_INTERFACE "tun0"
+#define DEFAULT_INTERFACE "wlo1"
 #define LOG_DIRECTORY "./logs"
 #define DISPLAY_UPDATE_INTERVAL 2  // seconds
 
@@ -27,7 +27,7 @@ void signal_handler(int signum) {
 void print_usage(const char *program_name) {
     printf("Uso: %s [-i interface] [-l log_dir] [-h]\n", program_name);
     printf("Opções:\n");
-    printf("  -i interface  Interface de rede a ser monitorada (padrão: tun0)\n");
+    printf("  -i interface  Interface de rede a ser monitorada (padrão: eth0)\n");
     printf("  -l log_dir    Diretório para arquivos de log (padrão: ./logs)\n");
     printf("  -h            Exibe esta mensagem de ajuda\n");
 }
